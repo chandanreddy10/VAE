@@ -31,4 +31,4 @@ def kl_loss(mu, logvar, size, kl_weight=0.01):
     
     kl_per_sample = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / size
     
-    return kl_per_sample * kl_weight
+    return kl_per_sample #* kl_weight
