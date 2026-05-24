@@ -6,29 +6,41 @@ from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-
+from pathlib import Path
+import yaml 
 
 from model import VanillaVAE
 from loss import vae_loss
 from utils import track_grad
 
+ROOT_DIR = Path(__file__).parents[1]
+CONFIG_FILE = ROOT_DIR / "config.yaml"
+
+with open(CONFIG_FILE, "r") as file:
+    CONFIG = yaml.safe_load(file)
+
+CHECKPOINT = ROOT_DIR / CONFIG["checkpoint"]
+SAMPLES = ROOT_DIR / CONFIG["samples"]
+DATA_FOLDER = ROOT_DIR / CONFIG["data_folder"]
+
 EPOCHS = 100
 BATCH_SIZE = 128
 LEARNING_RATE = 1e-3
 
-os.makedirs("checkpoints", exist_ok=True)
-os.makedirs("samples", exist_ok=True)
-log_file_path = "checkpoints/training_logs_2.csv"
+os.makedirs(CHECKPOINT, exist_ok=True)
+os.makedirs(SAMPLES, exist_ok=True)
+log_file_path = f"{CHECKPOINT}/training_logs_2.csv"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 # Datasets
-train_dataset = datasets.FashionMNIST(root="data", train=True, download=True, transform=ToTensor())
-test_dataset = datasets.FashionMNIST(root="data", train=False, download=True, transform=ToTensor())
+train_dataset = datasets.FashionMNIST(root=DATA_FOLDER, train=True, download=True, transform=ToTensor())
+test_dataset = datasets.FashionMNIST(root=DATA_FOLDER, train=False, download=True, transform=ToTensor())
 
 train_dataloader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
 test_dataloader =  DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
+
 
 model = VanillaVAE().to(device)
 optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
@@ -116,7 +128,7 @@ for epoch in range(EPOCHS):
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': avg_test_loss,
-    }, "checkpoints/vanilla_vae_latest_2.pt")
+    }, f"{CHECKPOINT}/vanilla_vae_latest_2.pt")
 
     # 5. Generate and Save Samples
     with torch.no_grad():
@@ -124,6 +136,6 @@ for epoch in range(EPOCHS):
         random_latent = torch.randn(64, model.mu_logvar.out_features // 2).to(device) 
         generated_images = model.decode(random_latent).cpu()
         
-        utils.save_image(generated_images, f"samples/epoch_{epoch+1}.png", nrow=8)
+        utils.save_image(generated_images, f"{SAMPLES}/epoch_{epoch+1}.png", nrow=8)
         
-print("\nTraining Complete! Logs saved to 'checkpoints/training_logs_2.csv'")
+print(f"\nTraining Complete! Logs saved to {CHECKPOINT}/training_logs_2.csv")
