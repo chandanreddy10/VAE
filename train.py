@@ -33,6 +33,7 @@ test_dataloader =  DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False
 model = VanillaVAE().to(device)
 optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
 
+
 with open(log_file_path, mode="w", newline="") as f:
     writer = csv.writer(f)
     writer.writerow(["epoch", "train_loss", "train_recon", "train_kl", "test_loss", "test_recon", "test_kl", "lr"])
