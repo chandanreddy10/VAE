@@ -1,22 +1,26 @@
 import torch 
 import torch.nn.functional as F
 
-#ELBO
+#ELBO = reconstruction + KL
+def vae_loss(x_hat, x, mu, sigma, std):
+    
+    rc = recon_loss(x_hat, x)
+    kl = kl_loss(mu, sigma, std)
 
-def vae_loss(x_hat, x, mu, log_var):
+    return rc + kl , rc, kl
+
+def recon_loss(x_hat, x):
     x = x.view(-1, 784)
-    batch_size = x_hat.shape[0]
-
-    rc_loss = F.mse_loss(
+    
+    rc_loss = F.binary_cross_entropy_with_logits(
         x_hat,
         x,
         reduction="sum"
     )
 
-    kl_loss = -0.5 * torch.sum(
-        1 + log_var - mu.pow(2) - log_var.exp()
-                               )
+    return rc_loss / x.size(0)
 
-    loss = (rc_loss + kl_loss) / batch_size
-
-    return loss
+def kl_loss(mu, sigma, std, eps=1e-8):
+    kl_per_sample = 0.5 * torch.sum(mu.pow(2) + sigma.exp() -1 - sigma, dim=1)
+    
+    return kl_per_sample.mean()

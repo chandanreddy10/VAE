@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import torch.functional as F
 
 class VanillaVAE(nn.Module):
 
@@ -7,46 +8,45 @@ class VanillaVAE(nn.Module):
 
         super().__init__()
 
-        # Encoder
-        self.enc_lay_1 = nn.Linear(input_dim, hidden_dim)
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, latent_dim * 2) #chunk
+        )
+        
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, input_dim),
+        )
+        
 
-        self.mu = nn.Linear(hidden_dim, latent_dim)
-        self.log_var = nn.Linear(hidden_dim, latent_dim)
+    def encode(self, x):
 
-        # Decoder
-        self.dec_lay_1 = nn.Linear(latent_dim, hidden_dim)
-        self.dec_lay_2 = nn.Linear(hidden_dim, input_dim)
+        hidden = self.encoder(x)
+        mu, sigma = torch.chunk(hidden, 2, dim=-1)
 
-        self.relu = nn.ReLU()
+        return mu, sigma
 
-    def encoder(self, x):
+    def reparameterization(self, mu, sigma):
 
-        hidden = self.relu(self.enc_lay_1(x))
-
-        mu = self.mu(hidden)
-        log_var = self.log_var(hidden)
-
-        return mu, log_var
-
-    def reparameterization(self, mu, log_var):
-
-        std = torch.exp(0.5 * log_var)
+        std = torch.exp(0.5 * sigma)
         epsilon = torch.randn_like(std)
         z = mu + std * epsilon
 
         return z
 
-    def decoder(self, z):
+    def decode(self, z):
 
-        hidden = self.relu(self.dec_lay_1(z))
-        logits = self.dec_lay_2(hidden)
+        output = self.decoder(z)
 
-        return logits
+        return output
 
     def forward(self, x):
 
-        mu, log_var = self.encoder(x)
-        z = self.reparameterization(mu, log_var)
-        x_hat = self.decoder(z)
+        mu, sigma = self.encode(x)
+        std = torch.exp(0.5 * sigma)
+        z = self.reparameterization(mu, std)
+        x_hat = self.decode(z)
 
-        return x_hat, mu, log_var
+        return x_hat, mu, std, sigma

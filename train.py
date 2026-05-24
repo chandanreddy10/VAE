@@ -42,8 +42,8 @@ for epoch in range(EPOCHS):
 
         optimizer.zero_grad()
 
-        output, mu, log_var = model(images)
-        loss = vae_loss(output, images, mu, log_var)
+        output, mu, sigma, std = model(images)
+        loss, recon, kl = vae_loss(output, images, mu, sigma, std)
 
         loss.backward()
         optimizer.step()
