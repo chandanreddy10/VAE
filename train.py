@@ -5,11 +5,12 @@ from torchvision import datasets, utils
 from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader
 from torch.optim import Adam
-from torch.optim.lr_scheduler import CosineAnnealingLR
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 
 from model import VanillaVAE
 from loss import vae_loss
+from utils import track_grad
 
 EPOCHS = 100
 BATCH_SIZE = 128
@@ -37,7 +38,7 @@ with open(log_file_path, mode="w", newline="") as f:
     writer.writerow(["epoch", "train_loss", "train_recon", "train_kl", "test_loss", "test_recon", "test_kl", "lr"])
 
 #Noticed Sawtooth Behaviour adding scheduler.
-scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-6)
+scheduler = ReduceLROnPlateau(optimizer, patience=10, factor=0.1)
 
 # Train Loop
 for epoch in range(EPOCHS):
@@ -64,10 +65,15 @@ for epoch in range(EPOCHS):
         train_kl += kl.item() * images.size(0)
         
         if index % 10:
+            results = track_grad.analyze_vae_gradients(model)
             denom = index * BATCH_SIZE
             print(f"Epoch : {epoch} | Train Loss : {train_total /denom} | Recon Loss : {train_recon/denom} | Train KL : {train_kl/denom}")
+            print(results)
+        
+        
         # break
     # break
+    results = track_grad.analyze_vae_gradients(model)
     # Calculate averages
     avg_train_loss = train_total / len(train_dataset)
     avg_train_recon = train_recon / len(train_dataset)
@@ -94,7 +100,7 @@ for epoch in range(EPOCHS):
     avg_test_kl = test_kl / len(test_dataset)
     
     print(f"[Test]  Loss: {avg_test_loss:.4f} | Recon: {avg_test_recon:.4f} | KL: {avg_test_kl:.4f}")
-    scheduler.step()
+    scheduler.step(avg_test_loss)
     current_lr = optimizer.param_groups[0]['lr']
     print(f"End of Epoch {epoch+1} | Current LR: {current_lr}")
     
