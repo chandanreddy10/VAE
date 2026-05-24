@@ -13,7 +13,7 @@ def vae_loss(x_hat, x, mu, logvar):
     return rc + kl, rc, kl
 
 def recon_loss(x_hat, x):
-    # Safety clamp: keeps pixel predictions microscopically away from hard 0.0 or 1.0
+    # Safety clamp: keeps pixel predictions away from hard 0.0 or 1.0
     # to protect Binary Cross Entropy from hitting log(0) -> NaN/Asserts
     x_hat = torch.clamp(x_hat, min=1e-7, max=1.0 - 1e-7)
     

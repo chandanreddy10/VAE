@@ -5,6 +5,8 @@ from torchvision import datasets, utils
 from torchvision.transforms import ToTensor
 from torch.utils.data import DataLoader
 from torch.optim import Adam
+from torch.optim.lr_scheduler import CosineAnnealingLR
+
 
 from model import VanillaVAE
 from loss import vae_loss
@@ -15,7 +17,7 @@ LEARNING_RATE = 1e-3
 
 os.makedirs("checkpoints", exist_ok=True)
 os.makedirs("samples", exist_ok=True)
-log_file_path = "checkpoints/training_logs.csv"
+log_file_path = "checkpoints/training_logs_2.csv"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
@@ -32,7 +34,10 @@ optimizer = Adam(model.parameters(), lr=LEARNING_RATE)
 
 with open(log_file_path, mode="w", newline="") as f:
     writer = csv.writer(f)
-    writer.writerow(["epoch", "train_loss", "train_recon", "train_kl", "test_loss", "test_recon", "test_kl"])
+    writer.writerow(["epoch", "train_loss", "train_recon", "train_kl", "test_loss", "test_recon", "test_kl", "lr"])
+
+#Noticed Sawtooth Behaviour adding scheduler.
+scheduler = CosineAnnealingLR(optimizer, T_max=EPOCHS, eta_min=1e-6)
 
 # Train Loop
 for epoch in range(EPOCHS):
@@ -89,11 +94,14 @@ for epoch in range(EPOCHS):
     avg_test_kl = test_kl / len(test_dataset)
     
     print(f"[Test]  Loss: {avg_test_loss:.4f} | Recon: {avg_test_recon:.4f} | KL: {avg_test_kl:.4f}")
-
+    scheduler.step()
+    current_lr = optimizer.param_groups[0]['lr']
+    print(f"End of Epoch {epoch+1} | Current LR: {current_lr}")
+    
     # 3. Log 
     with open(log_file_path, mode="a", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow([epoch + 1, avg_train_loss, avg_train_recon, avg_train_kl, avg_test_loss, avg_test_recon, avg_test_kl])
+        writer.writerow([epoch + 1, avg_train_loss, avg_train_recon, avg_train_kl, avg_test_loss, avg_test_recon, avg_test_kl, current_lr])
 
     # 4. Save Model
     torch.save({
@@ -101,7 +109,7 @@ for epoch in range(EPOCHS):
         'model_state_dict': model.state_dict(),
         'optimizer_state_dict': optimizer.state_dict(),
         'loss': avg_test_loss,
-    }, "checkpoints/vanilla_vae_latest.pt")
+    }, "checkpoints/vanilla_vae_latest_2.pt")
 
     # 5. Generate and Save Samples
     with torch.no_grad():
@@ -111,4 +119,4 @@ for epoch in range(EPOCHS):
         
         utils.save_image(generated_images, f"samples/epoch_{epoch+1}.png", nrow=8)
         
-print("\nTraining Complete! Logs saved to 'checkpoints/training_logs.csv'")
+print("\nTraining Complete! Logs saved to 'checkpoints/training_logs_2.csv'")

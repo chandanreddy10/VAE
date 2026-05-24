@@ -6,35 +6,35 @@ class VanillaVAE(nn.Module):
         super().__init__()
 
         self.encoder = nn.Sequential(
-            nn.Conv2d(input_channels, 32, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(input_channels, 32, kernel_size=4, stride=2),
             nn.BatchNorm2d(32),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
 
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.BatchNorm2d(64),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
 
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(64, 128, kernel_size=4, stride=2),
             nn.BatchNorm2d(128),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
             nn.Flatten(),
         )
         
         # Changed variable naming representation to logvar for mathematical clarity
-        self.mu_logvar = nn.Linear(128 * 28 * 28, latent_dim * 2)
-        self.decoder_input = nn.Linear(latent_dim, 128 * 28 * 28)
+        self.mu_logvar = nn.Linear(128 * 13 * 13, latent_dim * 2)
+        self.decoder_input = nn.Linear(latent_dim, 128 * 13 * 13)
 
         self.decoder = nn.Sequential(
-            nn.ConvTranspose2d(128, 64, kernel_size=3, padding=1, stride=1),
+            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2),
             nn.BatchNorm2d(64),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
 
-            nn.ConvTranspose2d(64, 32, kernel_size=3, padding=1, stride=1),
+            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2),
             nn.BatchNorm2d(32),
-            nn.ReLU(),
+            nn.LeakyReLU(0.2),
 
-            # FIXED: Removed BatchNorm2d from here to prevent extreme squashing/NaNs
-            nn.ConvTranspose2d(32, input_channels, kernel_size=3, padding=1, stride=1),
+           
+            nn.ConvTranspose2d(32, input_channels, kernel_size=4, stride=2),
             nn.Sigmoid()
         )
         
