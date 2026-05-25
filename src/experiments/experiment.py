@@ -132,7 +132,7 @@ for grid_config in HYPG:
                     optimizer.zero_grad()
                     
                     output, mu, logvar = model(images)
-                    print(output.shape)
+                    # print(output.shape)
                     loss, recon, kl = vae_loss(output, images, mu, logvar)
                     
                     total_loss = recon + (RUN_CONFIG["kl_weight"] * kl)
@@ -154,7 +154,7 @@ for grid_config in HYPG:
                         denom = index * BATCH_SIZE
                         print(f"Batch {index} | Est. Loss: {train_total / denom:.4f} | Recon: {train_recon / denom:.4f} | KL: {train_kl / denom:.4f}")
                 
-                    break
+                    #break
                 avg_train_loss = train_total / len(train_dataset)
                 avg_train_recon = train_recon / len(train_dataset)
                 avg_train_kl = train_kl / len(train_dataset)
@@ -217,7 +217,7 @@ for grid_config in HYPG:
                         random_latent = torch.randn(64, dim).to(device) 
                         generated_images = model.decode(random_latent).cpu()
                         utils.save_image(generated_images, f"{exp_samples_dir}/epoch_{epoch+1}.png", nrow=8)
-                break  
+                #break  
             print(f"Completed Experiment Pipeline for Run Variant: {exp_id}")
 
 print("\n Logs Generated Successfully!")
