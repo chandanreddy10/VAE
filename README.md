@@ -28,6 +28,33 @@
 </table>
 
 ### Above results are from the experiments across 24 different training runs. The config for these runs is under ```src/experiments```
+### Generated samples across different runs
+<table>
+  <tr>
+    <td align="center">
+      <img src="samples/epoch_91.png" width="400"/>
+      <br/>
+      <b>Experiment Results</b>
+    </td>
+    <td align="center">
+      <img src="samples/epoch_91_2.png" width="400"/>
+      <br/>
+      <b>Gradient Flow Map</b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="samples/epoch_91_3.png" width="400"/>
+      <br/>
+      <b>Trajectory for a Single Layer</b>
+    </td>
+    <td align="center">
+      <img src="samples/epoch_91_4.png" width="400"/>
+      <br/>
+      <b>Dead Neuron Percentage</b>
+    </td>
+  </tr>
+</table>
 
 ## TODO:
 ### Different Variants of VAEs. More focus on CVAE.
